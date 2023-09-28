@@ -9,12 +9,10 @@ export enum LogLevel {
   OFF = 0,
 }
 
-export interface loggingFn {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  (message?: any, ...optionalParams: any[]): void;
-}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+export type loggingFn = (message?: any, ...optionalParams: any[]) => void;
 
-export interface ILogger {
+export type ILogger = {
   log: loggingFn;
   warn: loggingFn;
   error: loggingFn;
@@ -23,19 +21,25 @@ export interface ILogger {
   trace: loggingFn;
   init: (level: string) => void;
   getLogLevel: () => LogLevel;
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-export const emptyLog: loggingFn = (message?: any, ...optionalParams: any[]) => {
-  return;
-};
+export const emptyLog: loggingFn = (
+  message?: any,
+  ...optionalParams: any[]
+) => {};
 
 class Logger implements ILogger {
   readonly log: loggingFn;
+
   readonly warn: loggingFn;
+
   readonly error: loggingFn;
+
   readonly debug: loggingFn;
+
   readonly info: loggingFn;
+
   readonly trace: loggingFn;
 
   private _logLevel: LogLevel = LogLevel.OFF;
@@ -64,18 +68,23 @@ class Logger implements ILogger {
     if (this._logLevel < LogLevel.ERROR) {
       this.error = emptyLog;
     }
+
     if (this._logLevel < LogLevel.WARN) {
       this.warn = emptyLog;
     }
+
     if (this._logLevel < LogLevel.INFO) {
       this.info = emptyLog;
     }
+
     if (this._logLevel < LogLevel.DEBUG) {
       this.debug = emptyLog;
     }
+
     if (this._logLevel < LogLevel.TRACE) {
       this.trace = emptyLog;
     }
+
     if (this._logLevel < LogLevel.ALL) {
       this.log = emptyLog;
     }

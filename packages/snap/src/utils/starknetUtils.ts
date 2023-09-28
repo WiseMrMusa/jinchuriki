@@ -1,4 +1,3 @@
-import { toJson } from './serializer';
 import { BIP44AddressKeyDeriver } from '@metamask/key-tree';
 import {
   ec,
@@ -23,12 +22,23 @@ import {
   validateAndParseAddress as _validateAndParseAddress,
 } from 'starknet';
 import type { Hex } from '@noble/curves/abstract/utils';
-import { Network, SnapState, Transaction, TransactionType } from '../types/snapState';
+import {
+  Network,
+  SnapState,
+  Transaction,
+  TransactionType,
+} from '../types/snapState';
+import { RpcV4GetTransactionReceiptResponse } from '../types/snapApi';
+import { toJson } from './serializer';
 import { PROXY_CONTRACT_HASH, TRANSFER_SELECTOR_HEX } from './constants';
 import { getAddressKey } from './keyPair';
-import { getAccount, getAccounts, getTransactionFromVoyagerUrl, getTransactionsFromVoyagerUrl } from './snapUtils';
+import {
+  getAccount,
+  getAccounts,
+  getTransactionFromVoyagerUrl,
+  getTransactionsFromVoyagerUrl,
+} from './snapUtils';
 import { logger } from './logger';
-import { RpcV4GetTransactionReceiptResponse } from '../types/snapApi';
 
 export const getCallDataArray = (callDataStr: string): string[] => {
   return (callDataStr ?? '')
@@ -37,7 +47,10 @@ export const getCallDataArray = (callDataStr: string): string[] => {
     .filter((x) => x.length > 0);
 };
 
-export const getProvider = (network: Network, forceSequencer = false): Provider => {
+export const getProvider = (
+  network: Network,
+  forceSequencer = false,
+): Provider => {
   let providerParam: ProviderOptions = {};
   // same precedence as defined in starknet.js Provider class constructor
   if (network.nodeUrl && !forceSequencer) {
@@ -81,7 +94,9 @@ export const estimateFee = async (
 ): Promise<EstimateFee> => {
   const provider = getProvider(network);
   const account = new Account(provider, senderAddress, privateKey);
-  return account.estimateInvokeFee(txnInvocation, { blockIdentifier: 'latest' });
+  return account.estimateInvokeFee(txnInvocation, {
+    blockIdentifier: 'latest',
+  });
 };
 
 export const estimateFeeBulk = async (
@@ -122,7 +137,7 @@ export const deployAccount = async (
   const account = new Account(provider, contractAddress, privateKey);
   const deployAccountPayload = {
     classHash: PROXY_CONTRACT_HASH,
-    contractAddress: contractAddress,
+    contractAddress,
     constructorCalldata: contractCallData,
     addressSalt,
   };
@@ -140,28 +155,39 @@ export const estimateAccountDeployFee = async (
   const account = new Account(provider, contractAddress, privateKey);
   const deployAccountPayload = {
     classHash: PROXY_CONTRACT_HASH,
-    contractAddress: contractAddress,
+    contractAddress,
     constructorCalldata: contractCallData,
     addressSalt,
   };
   return account.estimateAccountDeployFee(deployAccountPayload);
 };
 
-export const getSigner = async (userAccAddress: string, network: Network): Promise<string> => {
+export const getSigner = async (
+  userAccAddress: string,
+  network: Network,
+): Promise<string> => {
   const resp = await callContract(network, userAccAddress, 'getSigner');
   return resp.result[0];
 };
 
-export const getTransactionStatus = async (transactionHash: num.BigNumberish, network: Network) => {
+export const getTransactionStatus = async (
+  transactionHash: num.BigNumberish,
+  network: Network,
+) => {
   const provider = getProvider(network);
-  const receipt = (await provider.getTransactionReceipt(transactionHash)) as RpcV4GetTransactionReceiptResponse;
+  const receipt = (await provider.getTransactionReceipt(
+    transactionHash,
+  )) as RpcV4GetTransactionReceiptResponse;
   return {
     executionStatus: receipt.execution_status,
     finalityStatus: receipt.finality_status,
   };
 };
 
-export const getTransaction = async (transactionHash: num.BigNumberish, network: Network) => {
+export const getTransaction = async (
+  transactionHash: num.BigNumberish,
+  network: Network,
+) => {
   const provider = getProvider(network);
   return provider.getTransaction(transactionHash);
 };
@@ -177,10 +203,17 @@ export const getTransactionsFromVoyager = async (
     toQueryStr = `to=${num.toHex(num.toBigInt(toAddress))}&`;
   }
   // "ps" only effective on value: 10, 25, 50 as what's currently available in Voyager page
-  return getData(`${getTransactionsFromVoyagerUrl(network)}?${toQueryStr}ps=${pageSize}&p=${pageNum}`);
+  return getData(
+    `${getTransactionsFromVoyagerUrl(
+      network,
+    )}?${toQueryStr}ps=${pageSize}&p=${pageNum}`,
+  );
 };
 
-export const getTransactionFromVoyager = async (transactionHash: num.BigNumberish, network: Network) => {
+export const getTransactionFromVoyager = async (
+  transactionHash: num.BigNumberish,
+  network: Network,
+) => {
   const txHashHex = num.toHex(num.toBigInt(transactionHash));
   return getData(`${getTransactionFromVoyagerUrl(network)}/${txHashHex}`);
 };
@@ -197,14 +230,25 @@ const getTransactionsFromVoyagerHelper = async (
   let maxPage = i;
   do {
     try {
-      const { items, lastPage } = await getTransactionsFromVoyager(toAddress, pageSize, i, network);
+      const { items, lastPage } = await getTransactionsFromVoyager(
+        toAddress,
+        pageSize,
+        i,
+        network,
+      );
       txns.push(...items);
       maxPage = lastPage;
     } catch (err) {
-      logger.error(`getTransactionsFromVoyagerHelper: error received from getTransactionsFromVoyager: ${err}`);
+      logger.error(
+        `getTransactionsFromVoyagerHelper: error received from getTransactionsFromVoyager: ${err}`,
+      );
     }
     i++;
-  } while (i <= maxPage && txns[txns.length - 1]?.timestamp * 1000 >= minTimestamp);
+  } while (
+    i <= maxPage &&
+    txns[txns.length - 1]?.timestamp * 1000 >= minTimestamp
+  );
+
   logger.log(
     `getTransactionsFromVoyagerHelper: minTimestamp = ${minTimestamp}, i = ${i}, maxPage = ${maxPage}, total = ${txns.length}`,
   );
@@ -214,11 +258,17 @@ const getTransactionsFromVoyagerHelper = async (
     if (i <= maxPage) {
       // means lastPage not fetched
       try {
-        const { items: lastPageTxns } = await getTransactionsFromVoyager(toAddress, pageSize, maxPage, network);
+        const { items: lastPageTxns } = await getTransactionsFromVoyager(
+          toAddress,
+          pageSize,
+          maxPage,
+          network,
+        );
         deployTxns = lastPageTxns.filter(
           (txn) =>
             txn.type.toLowerCase() === TransactionType.DEPLOY.toLowerCase() ||
-            txn.type.toLowerCase() === TransactionType.DEPLOY_ACCOUNT.toLowerCase(),
+            txn.type.toLowerCase() ===
+              TransactionType.DEPLOY_ACCOUNT.toLowerCase(),
         );
         txns = [...txns, ...deployTxns];
       } catch (err) {
@@ -230,14 +280,17 @@ const getTransactionsFromVoyagerHelper = async (
       deployTxns = txns.filter(
         (txn) =>
           txn.type.toLowerCase() === TransactionType.DEPLOY.toLowerCase() ||
-          txn.type.toLowerCase() === TransactionType.DEPLOY_ACCOUNT.toLowerCase(),
+          txn.type.toLowerCase() ===
+            TransactionType.DEPLOY_ACCOUNT.toLowerCase(),
       );
     }
   }
 
   // ensure the txns comes after or at the min timestamp or its in the deploy txns
   txns = txns.filter(
-    (txn) => txn.timestamp * 1000 >= minTimestamp || deployTxns.find((deployTxn) => deployTxn.hash === txn.hash),
+    (txn) =>
+      txn.timestamp * 1000 >= minTimestamp ||
+      deployTxns.find((deployTxn) => deployTxn.hash === txn.hash),
   );
 
   return {
@@ -271,21 +324,38 @@ export const getMassagedTransactions = async (
         txnResp = await getTransaction(txn.hash, network);
         statusResp = await getTransactionStatus(txn.hash, network);
         logger.log(`getMassagedTransactions: txnResp:\n${toJson(txnResp)}`);
-        logger.log(`getMassagedTransactions: statusResp:\n${toJson(statusResp)}`);
+        logger.log(
+          `getMassagedTransactions: statusResp:\n${toJson(statusResp)}`,
+        );
       } catch (err) {
-        logger.error(`getMassagedTransactions: error received from getTransaction: ${err}`);
+        logger.error(
+          `getMassagedTransactions: error received from getTransaction: ${err}`,
+        );
       }
 
       const massagedTxn: Transaction = {
         txnHash: txnResp.transaction_hash || txn.hash,
         txnType: txn.type?.toLowerCase(),
         chainId: network.chainId,
-        senderAddress: txnResp.sender_address || txnResp.contract_address || txn.contract_address || '',
-        contractAddress: txnResp.calldata?.[1] || txnResp.contract_address || txn.contract_address || '',
-        contractFuncName: num.toBigInt(txnResp.calldata?.[2] || '') === bigIntTransferSelectorHex ? 'transfer' : '',
-        contractCallData: txnResp.calldata?.slice(6, txnResp.calldata?.length - 1) || [],
+        senderAddress:
+          txnResp.sender_address ||
+          txnResp.contract_address ||
+          txn.contract_address ||
+          '',
+        contractAddress:
+          txnResp.calldata?.[1] ||
+          txnResp.contract_address ||
+          txn.contract_address ||
+          '',
+        contractFuncName:
+          num.toBigInt(txnResp.calldata?.[2] || '') ===
+          bigIntTransferSelectorHex
+            ? 'transfer'
+            : '',
+        contractCallData:
+          txnResp.calldata?.slice(6, txnResp.calldata?.length - 1) || [],
         timestamp: txn.timestamp,
-        status: '', //DEPRECATION
+        status: '', // DEPRECATION
         finalityStatus: statusResp.finalityStatus || '',
         executionStatus: statusResp.executionStatus || '',
         eventIds: [],
@@ -296,7 +366,9 @@ export const getMassagedTransactions = async (
     }),
   );
 
-  logger.log(`getMassagedTransactions: massagedTxns total = ${massagedTxns.length}`);
+  logger.log(
+    `getMassagedTransactions: massagedTxns total = ${massagedTxns.length}`,
+  );
   logger.log(`getMassagedTransactions: massagedTxns:\n${toJson(massagedTxns)}`);
 
   if (contractAddress) {
@@ -324,21 +396,27 @@ export const postData = async (url = '', data = {}) => {
   // Default options are marked with *
   const response = await fetch(url, {
     method: 'POST', // *GET, POST, PUT, DELETE, etc.
-    //mode: 'cors', // no-cors, *cors, same-origin
-    //cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    //credentials: 'same-origin', // include, *same-origin, omit
+    // mode: 'cors', // no-cors, *cors, same-origin
+    // cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    // credentials: 'same-origin', // include, *same-origin, omit
     headers: {
       'Content-Type': 'application/json',
     },
     redirect: 'follow', // manual, *follow, error
-    //referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+    // referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
     body: json.stringify(data), // body data type must match "Content-Type" header
   });
   return response.json(); // parses JSON response into native JavaScript objects
 };
 
+/**
+ *
+ * @param privateKey
+ */
 export function getFullPublicKeyPairFromPrivateKey(privateKey: Hex) {
-  return encode.addHexPrefix(encode.buf2hex(ec.starkCurve.getPublicKey(privateKey, false)));
+  return encode.addHexPrefix(
+    encode.buf2hex(ec.starkCurve.getPublicKey(privateKey, false)),
+  );
 }
 
 export const getTypedDataMessageSignature = (
@@ -365,26 +443,42 @@ export const verifyTypedDataMessageSignature = (
   return ec.starkCurve.verify(signature, msgHash, fullPublicKey);
 };
 
-export const getNextAddressIndex = (chainId: string, state: SnapState, derivationPath: string) => {
+export const getNextAddressIndex = (
+  chainId: string,
+  state: SnapState,
+  derivationPath: string,
+) => {
   const accounts = getAccounts(state, chainId).filter(
     (acc) => acc.derivationPath === derivationPath && acc.addressIndex >= 0,
   );
-  const uninitializedAccount = accounts.find((acc) => !acc.publicKey || num.toBigInt(acc.publicKey) === constants.ZERO);
+  const uninitializedAccount = accounts.find(
+    (acc) => !acc.publicKey || num.toBigInt(acc.publicKey) === constants.ZERO,
+  );
   logger.log(
-    `getNextAddressIndex:\nUninitialized account found from state:\n${toJson(uninitializedAccount ?? 'None')}`,
+    `getNextAddressIndex:\nUninitialized account found from state:\n${toJson(
+      uninitializedAccount ?? 'None',
+    )}`,
   );
   return uninitializedAccount?.addressIndex ?? accounts.length;
 };
 
-export const getAccContractAddressAndCallData = (accountClassHash: string, publicKey) => {
+export const getAccContractAddressAndCallData = (
+  accountClassHash: string,
+  publicKey,
+) => {
   const callData = CallData.compile({
     implementation: accountClassHash,
     selector: hash.getSelectorFromName('initialize'),
     calldata: CallData.compile({ signer: publicKey, guardian: '0' }),
   });
-  let address = hash.calculateContractAddressFromHash(publicKey, PROXY_CONTRACT_HASH, callData, 0);
+  let address = hash.calculateContractAddressFromHash(
+    publicKey,
+    PROXY_CONTRACT_HASH,
+    callData,
+    0,
+  );
   if (address.length < 66) {
-    address = address.replace('0x', '0x' + '0'.repeat(66 - address.length));
+    address = address.replace('0x', `0x${'0'.repeat(66 - address.length)}`);
   }
   return {
     address,
@@ -403,22 +497,39 @@ export const getKeysFromAddress = async (
   const acc = getAccount(state, address, network.chainId);
   if (acc) {
     addressIndex = acc.addressIndex;
-    logger.log(`getNextAddressIndex:\nFound address in state: ${addressIndex} ${address}`);
+    logger.log(
+      `getNextAddressIndex:\nFound address in state: ${addressIndex} ${address}`,
+    );
   } else {
     const bigIntAddress = num.toBigInt(address);
     for (let i = 0; i < maxScan; i++) {
-      const { publicKey } = await getKeysFromAddressIndex(keyDeriver, network.chainId, state, i);
-      const { address: calculatedAddress } = getAccContractAddressAndCallData(network.accountClassHash, publicKey);
+      const { publicKey } = await getKeysFromAddressIndex(
+        keyDeriver,
+        network.chainId,
+        state,
+        i,
+      );
+      const { address: calculatedAddress } = getAccContractAddressAndCallData(
+        network.accountClassHash,
+        publicKey,
+      );
       if (num.toBigInt(calculatedAddress) === bigIntAddress) {
         addressIndex = i;
-        logger.log(`getNextAddressIndex:\nFound address in scan: ${addressIndex} ${address}`);
+        logger.log(
+          `getNextAddressIndex:\nFound address in scan: ${addressIndex} ${address}`,
+        );
         break;
       }
     }
   }
 
   if (!isNaN(addressIndex)) {
-    return getKeysFromAddressIndex(keyDeriver, network.chainId, state, addressIndex);
+    return getKeysFromAddressIndex(
+      keyDeriver,
+      network.chainId,
+      state,
+      addressIndex,
+    );
   }
   console.log(`getNextAddressIndex:\nAddress not found: ${address}`);
   throw new Error(`Address not found: ${address}`);
@@ -436,7 +547,10 @@ export const getKeysFromAddressIndex = async (
     logger.log(`getKeysFromAddressIndex: addressIndex found: ${addressIndex}`);
   }
 
-  const { addressKey, derivationPath } = await getAddressKey(keyDeriver, addressIndex);
+  const { addressKey, derivationPath } = await getAddressKey(
+    keyDeriver,
+    addressIndex,
+  );
   const starkKeyPub = ec.starkCurve.getStarkKey(addressKey);
   const starkKeyPrivate = num.toHex(addressKey);
   return {
@@ -447,10 +561,16 @@ export const getKeysFromAddressIndex = async (
   };
 };
 
-export const isAccountDeployed = async (network: Network, publicKey: string) => {
+export const isAccountDeployed = async (
+  network: Network,
+  publicKey: string,
+) => {
   let accountDeployed = true;
   try {
-    const { address: signerContractAddress } = getAccContractAddressAndCallData(network.accountClassHash, publicKey);
+    const { address: signerContractAddress } = getAccContractAddressAndCallData(
+      network.accountClassHash,
+      publicKey,
+    );
     await getSigner(signerContractAddress, network);
   } catch (err) {
     accountDeployed = false;
@@ -459,13 +579,15 @@ export const isAccountDeployed = async (network: Network, publicKey: string) => 
   return accountDeployed;
 };
 
-export const addFeesFromAllTransactions = (fees: EstimateFee[]): EstimateFee => {
+export const addFeesFromAllTransactions = (
+  fees: EstimateFee[],
+): EstimateFee => {
   let overall_fee_bn = num.toBigInt(0);
   let suggestedMaxFee_bn = num.toBigInt(0);
 
   fees.forEach((fee) => {
-    overall_fee_bn = overall_fee_bn + fee.overall_fee;
-    suggestedMaxFee_bn = suggestedMaxFee_bn + fee.suggestedMaxFee;
+    overall_fee_bn += fee.overall_fee;
+    suggestedMaxFee_bn += fee.suggestedMaxFee;
   });
 
   return {
@@ -475,9 +597,14 @@ export const addFeesFromAllTransactions = (fees: EstimateFee[]): EstimateFee => 
 };
 
 export const _validateAndParseAddressFn = _validateAndParseAddress;
-export const validateAndParseAddress = (address: num.BigNumberish, length = 63) => {
+export const validateAndParseAddress = (
+  address: num.BigNumberish,
+  length = 63,
+) => {
   // getting rid of 0x and 0x0 prefixes
   const trimmedAddress = address.toString().replace(/^0x0?/, '');
-  if (trimmedAddress.length !== length) throw new Error(`Address ${address} has an invalid length`);
+  if (trimmedAddress.length !== length) {
+    throw new Error(`Address ${address} has an invalid length`);
+  }
   return _validateAndParseAddressFn(address);
 };

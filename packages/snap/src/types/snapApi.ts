@@ -2,13 +2,13 @@ import { BIP44AddressKeyDeriver } from '@metamask/key-tree';
 import Mutex from 'async-mutex/lib/Mutex';
 import { SnapState, VoyagerTransactionType } from './snapState';
 
-export interface ApiParams {
+export type ApiParams = {
   state: SnapState;
   requestParams: ApiRequestParams;
   saveMutex: Mutex;
   wallet;
   keyDeriver?: BIP44AddressKeyDeriver;
-}
+};
 
 export type ApiRequestParams =
   | CreateAccountRequestParams
@@ -31,118 +31,121 @@ export type ApiRequestParams =
   | GetTransactionsRequestParams
   | RecoverAccountsRequestParams;
 
-export interface BaseRequestParams {
+export type BaseRequestParams = {
   chainId?: string;
   isDev?: boolean;
   debugLevel?: string;
-}
+};
 
-export interface CreateAccountRequestParams extends BaseRequestParams {
+export type CreateAccountRequestParams = {
   addressIndex?: string | number;
   deploy?: boolean;
-}
+} & BaseRequestParams;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface GetStoredUserAccountsRequestParams extends BaseRequestParams {}
+export type GetStoredUserAccountsRequestParams = {} & BaseRequestParams;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface GetStoredErc20TokensRequestParams extends BaseRequestParams {}
+export type GetStoredErc20TokensRequestParams = {} & BaseRequestParams;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface GetStoredNetworksRequestParams extends Omit<BaseRequestParams, 'chainId'> {}
+export type GetStoredNetworksRequestParams = {} & Omit<
+  BaseRequestParams,
+  'chainId'
+>;
 
-export interface ExtractPrivateKeyRequestParams extends BaseRequestParams {
+export type ExtractPrivateKeyRequestParams = {
   userAddress: string;
-}
+} & BaseRequestParams;
 
-export interface ExtractPublicKeyRequestParams extends BaseRequestParams {
+export type ExtractPublicKeyRequestParams = {
   userAddress: string;
-}
+} & BaseRequestParams;
 
-export interface SignMessageRequestParams extends BaseRequestParams {
+export type SignMessageRequestParams = {
   signerAddress: string;
   typedDataMessage?: string;
-}
+} & BaseRequestParams;
 
-export interface VerifySignedMessageRequestParams extends BaseRequestParams {
+export type VerifySignedMessageRequestParams = {
   signerAddress: string;
   signature: string;
   typedDataMessage?: string;
-}
+} & BaseRequestParams;
 
-export interface GetErc20TokenBalanceRequestParams extends BaseRequestParams {
+export type GetErc20TokenBalanceRequestParams = {
   tokenAddress: string;
   userAddress: string;
-}
+} & BaseRequestParams;
 
-export interface GetTransactionStatusRequestParams extends BaseRequestParams {
+export type GetTransactionStatusRequestParams = {
   transactionHash: string;
-}
+} & BaseRequestParams;
 
-export interface SendTransactionRequestParams extends BaseRequestParams {
+export type SendTransactionRequestParams = {
   contractAddress: string;
   contractFuncName: string;
   contractCallData?: string;
   senderAddress: string;
   maxFee?: string;
-}
+} & BaseRequestParams;
 
-export interface GetValueRequestParams extends BaseRequestParams {
+export type GetValueRequestParams = {
   contractAddress: string;
   contractFuncName: string;
   contractCallData?: string;
-}
+} & BaseRequestParams;
 
-export interface EstimateFeeRequestParams extends BaseRequestParams {
+export type EstimateFeeRequestParams = {
   contractAddress: string;
   contractFuncName: string;
   contractCallData?: string;
   senderAddress: string;
-}
+} & BaseRequestParams;
 
-export interface EstimateAccountDeployFeeRequestParams extends BaseRequestParams {
+export type EstimateAccountDeployFeeRequestParams = {
   addressIndex?: string | number;
-}
+} & BaseRequestParams;
 
-export interface AddErc20TokenRequestParams extends BaseRequestParams {
+export type AddErc20TokenRequestParams = {
   tokenAddress: string;
   tokenName: string;
   tokenSymbol: string;
   tokenDecimals?: string | number;
-}
+} & BaseRequestParams;
 
-export interface AddNetworkRequestParams extends BaseRequestParams {
+export type AddNetworkRequestParams = {
   networkName: string;
   networkChainId: string;
   networkBaseUrl: string;
   networkNodeUrl: string;
   networkVoyagerUrl?: string;
   accountClassHash?: string;
-}
+} & BaseRequestParams;
 
-export interface GetStoredTransactionsRequestParams extends BaseRequestParams {
+export type GetStoredTransactionsRequestParams = {
   senderAddress?: string;
   contractAddress?: string;
   txnType?: VoyagerTransactionType | string;
   txnsInLastNumOfDays?: string | number;
-}
+} & BaseRequestParams;
 
-export interface GetTransactionsRequestParams extends BaseRequestParams {
+export type GetTransactionsRequestParams = {
   senderAddress?: string;
   contractAddress?: string;
   pageSize?: string | number;
   txnsInLastNumOfDays?: string | number;
   onlyFromState?: boolean;
   withDeployTxn?: boolean;
-}
+} & BaseRequestParams;
 
-export interface RecoverAccountsRequestParams extends BaseRequestParams {
+export type RecoverAccountsRequestParams = {
   startScanIndex?: string | number;
   maxScanned?: string | number;
   maxMissed?: string | number;
-}
+} & BaseRequestParams;
 
-export interface RpcV4GetTransactionReceiptResponse {
+export type RpcV4GetTransactionReceiptResponse = {
   execution_status?: string;
   finality_status?: string;
-}
+};

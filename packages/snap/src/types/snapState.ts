@@ -1,13 +1,13 @@
 import { RawCalldata } from 'starknet';
 
-export interface SnapState {
+export type SnapState = {
   accContracts: AccContract[];
   erc20Tokens: Erc20Token[];
   networks: Network[];
   transactions: Transaction[];
-}
+};
 
-export interface AccContract {
+export type AccContract = {
   addressSalt: string;
   publicKey: string; // in hex
   address: string; // in hex
@@ -15,17 +15,17 @@ export interface AccContract {
   derivationPath: string;
   deployTxnHash: string; // in hex
   chainId: string; // in hex
-}
+};
 
-export interface Erc20Token {
+export type Erc20Token = {
   address: string; // in hex
   name: string;
   symbol: string;
   decimals: number;
   chainId: string; // in hex
-}
+};
 
-export interface Network {
+export type Network = {
   name: string;
   chainId: string; // in hex
   baseUrl: string;
@@ -33,7 +33,7 @@ export interface Network {
   voyagerUrl: string;
   accountClassHash: string; // in hex
   useOldAccounts?: boolean;
-}
+};
 
 export enum TransactionType { // for sending txns via Starknet gateway
   DEPLOY = 'DEPLOY',
@@ -75,7 +75,7 @@ export enum TransactionStatusType { // for retrieving txn from StarkNet feeder g
   DEPRECATION = 'status',
 }
 
-export interface Transaction {
+export type Transaction = {
   txnHash: string; // in hex
   txnType: VoyagerTransactionType | string;
   chainId: string; // in hex
@@ -89,4 +89,4 @@ export interface Transaction {
   failureReason: string;
   eventIds: string[];
   timestamp: number;
-}
+};

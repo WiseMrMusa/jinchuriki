@@ -1,7 +1,14 @@
-import { BIP44AddressKeyDeriver, getBIP44AddressKeyDeriver } from '@metamask/key-tree';
+import {
+  BIP44AddressKeyDeriver,
+  getBIP44AddressKeyDeriver,
+} from '@metamask/key-tree';
 import { number, ec } from 'starknet_v4.22.0';
 import { utils } from 'ethers';
 
+/**
+ *
+ * @param wallet
+ */
 export async function getAddressKeyDeriver(wallet) {
   const bip44Node = await wallet.request({
     method: 'snap_getBip44Entropy',
@@ -10,11 +17,16 @@ export async function getAddressKeyDeriver(wallet) {
     },
   });
 
-  //`m / purpose' / coin_type' / account' / change / address_index`
-  //`m / 44' / 9004' / 0' / 0 / {index}`
+  // `m / purpose' / coin_type' / account' / change / address_index`
+  // `m / 44' / 9004' / 0' / 0 / {index}`
   return getBIP44AddressKeyDeriver(bip44Node);
 }
 
+/**
+ *
+ * @param keySeed
+ * @param keyValueLimit
+ */
 export function grindKey(keySeed: string, keyValueLimit = ec.ec.n): string {
   if (!keyValueLimit) {
     return keySeed;
@@ -23,7 +35,9 @@ export function grindKey(keySeed: string, keyValueLimit = ec.ec.n): string {
     '1 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000',
     16,
   );
-  const maxAllowedVal = sha256EcMaxDigest.sub(sha256EcMaxDigest.mod(keyValueLimit));
+  const maxAllowedVal = sha256EcMaxDigest.sub(
+    sha256EcMaxDigest.mod(keyValueLimit),
+  );
 
   // Make sure the produced key is devided by the Stark EC order,
   // and falls within the range [0, maxAllowedVal).
@@ -34,17 +48,30 @@ export function grindKey(keySeed: string, keyValueLimit = ec.ec.n): string {
     i++;
   } while (!key.lt(maxAllowedVal));
 
-  return '0x' + key.umod(keyValueLimit).toString('hex');
+  return `0x${key.umod(keyValueLimit).toString('hex')}`;
 }
 
+/**
+ *
+ * @param key
+ * @param index
+ */
 function hashKeyWithIndex(key: string, index: number) {
   const payload = utils.concat([utils.arrayify(key), utils.arrayify(index)]);
   const hash = utils.sha256(payload);
   return number.toBN(hash);
 }
 
-export async function getAddressKey(keyDeriver: BIP44AddressKeyDeriver, addressIndex = 0) {
-  const privateKey = (await keyDeriver(addressIndex)).privateKey;
+/**
+ *
+ * @param keyDeriver
+ * @param addressIndex
+ */
+export async function getAddressKey(
+  keyDeriver: BIP44AddressKeyDeriver,
+  addressIndex = 0,
+) {
+  const { privateKey } = await keyDeriver(addressIndex);
   const addressKey = grindKey(privateKey);
   return {
     addressKey,
